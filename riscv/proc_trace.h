@@ -52,6 +52,7 @@ public:
     void set_tval(reg_t tval);
     void set_interrupt(uint8_t interrupt);
     void set_is_32bit_isa(bool is_32bit_isa);
+    void set_entry(reg_t entry);
 
     void record_load(reg_t addr, uint64_t res, size_t size, data_src_t src);
     void record_store(reg_t addr, uint64_t val, size_t size, data_src_t src);
@@ -65,6 +66,10 @@ public:
 private:
     // Instruction trace information
     std::ofstream m_itrace_ofs;
+
+    reg_t trace_entry = 0;
+    bool in_scope = false;
+
     reg_t m_addr = 0;
     uint64_t m_insn_binary = 0;
     uint8_t m_prv = 0;

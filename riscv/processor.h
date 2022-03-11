@@ -341,7 +341,7 @@ public:
   ~processor_t();
 
   void set_debug(bool value);
-  void set_i_trace(const char * const i_trace_file);
+  void set_i_trace(const char * const i_trace_file, reg_t entry);
   void set_d_trace(const char * const d_trace_file);
   void set_histogram(bool value);
 #ifdef RISCV_ENABLE_COMMITLOG

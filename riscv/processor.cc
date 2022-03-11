@@ -706,13 +706,14 @@ void processor_t::set_debug(bool value)
     e.second->set_debug(value);
 }
 
-void processor_t::set_i_trace(const char * const i_trace_file)
+void processor_t::set_i_trace(const char * const i_trace_file, reg_t entry)
 {
   proc_trace->set_is_32bit_isa(get_max_xlen() == 32);
 
   assert(i_trace_file != NULL);
 
   proc_trace->open_i_trace(i_trace_file);
+  proc_trace->set_entry(entry);
   i_trace = true;
 }
 
@@ -1068,7 +1069,9 @@ void processor_t::disasm(insn_t insn)
 {
   uint64_t bits = insn.bits() & ((1ULL << (8 * insn_length(insn.bits()))) - 1);
   if (last_pc != state.pc || last_bits != bits) {
-    std::stringstream s;  // first put everything in a string, later send it to output
+
+    if (debug) {
+        std::stringstream s;  // first put everything in a string, later send it to output
 
 #ifdef RISCV_ENABLE_COMMITLOG
     const char* sym = get_symbol(state.pc);
@@ -1079,17 +1082,18 @@ void processor_t::disasm(insn_t insn)
     }
 #endif
 
-    if (executions != 1) {
-      s << "core " << std::dec << std::setfill(' ') << std::setw(3) << id
-        << ": Executed " << executions << " times" << std::endl;
+        if (executions != 1) {
+          s << "core " << std::dec << std::setfill(' ') << std::setw(3) << id
+            << ": Executed " << executions << " times" << std::endl;
+        }
+
+        s << "core " << std::dec << std::setfill(' ') << std::setw(3) << id
+          << std::hex << ": 0x" << std::setfill('0') << std::setw(max_xlen/4)
+          << zext(state.pc, max_xlen) << " (0x" << std::setw(8) << bits << ") "
+          << disassembler->disassemble(insn) << std::endl;
+
+        debug_output_log(&s);
     }
-
-    s << "core " << std::dec << std::setfill(' ') << std::setw(3) << id
-      << std::hex << ": 0x" << std::setfill('0') << std::setw(max_xlen/4)
-      << zext(state.pc, max_xlen) << " (0x" << std::setw(8) << bits << ") "
-      << disassembler->disassemble(insn) << std::endl;
-
-    debug_output_log(&s);
 
     if (i_trace || d_trace) {
       proc_trace->step();

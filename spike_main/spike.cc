@@ -247,6 +247,7 @@ int main(int argc, char** argv)
   bool use_rbb = false;
   unsigned dmi_rti = 0;
   reg_t blocksz = 64;
+  reg_t entry = 0;
   debug_module_config_t dm_config = {
     .progbufsize = 2,
     .max_sba_data_width = 0,
@@ -329,6 +330,7 @@ int main(int argc, char** argv)
   parser.option('H', 0, 0, [&](const char* s){halted = true;});
   parser.option(0, "rbb-port", 1, [&](const char* s){use_rbb = true; rbb_port = atoul_safe(s);});
   parser.option(0, "pc", 1, [&](const char* s){start_pc = strtoull(s, 0, 0);});
+  parser.option(0, "trace-entry", 1, [&](const char* s){entry = strtoull(s, 0, 0);});
   parser.option(0, "hartids", 1, hartids_parser);
   parser.option(0, "ic", 1, [&](const char* s){ic.reset(new icache_sim_t(s));});
   parser.option(0, "dc", 1, [&](const char* s){dc.reset(new dcache_sim_t(s));});
@@ -488,7 +490,7 @@ int main(int argc, char** argv)
             ss << "_" << i;
             i_trace_filename += ss.str();
         }
-        s.get_core(i)->set_i_trace(i_trace_filename.c_str());
+        s.get_core(i)->set_i_trace(i_trace_filename.c_str(), entry);
     }
     if (d_trace_file != NULL) {
         std::string d_trace_filename(d_trace_file);

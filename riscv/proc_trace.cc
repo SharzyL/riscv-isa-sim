@@ -67,11 +67,19 @@ void proc_trace_t::step(void) {
         addr &= 0xffffffff;
         tval &= 0xffffffff;
     }
-    m_itrace_ofs << "1," << std::hex << addr << "," << m_insn_binary << ","
-                 << static_cast<unsigned>(m_prv) << "," << static_cast<unsigned>(m_ex) << ","
-                 << m_ex_cause << "," << tval << ","
-                 << static_cast<unsigned>(m_interrupt) << "\n";
-    m_itrace_ofs.flush();
+    if (addr == trace_entry) in_scope = true;
+    if (trace_entry != 0 && (addr == trace_entry + 4 || addr == trace_entry + 2)) in_scope = false;
+    if (in_scope) {
+        m_itrace_ofs << "1,"
+                     << std::hex << std::setfill('0') << std::setw(16) << m_addr << ","
+                     << std::setw(8) << m_insn_binary << ","
+                     << static_cast<unsigned>(m_prv) << ","
+                     << static_cast<unsigned>(m_ex) << ","
+                     << m_ex_cause << ","
+                     << tval << ","
+                     << static_cast<unsigned>(m_interrupt) << "\n";
+        m_itrace_ofs.flush();
+    }
 
     m_ex = 0;
     m_ex_cause = 0;
@@ -248,20 +256,34 @@ void proc_trace_t::record_data(reg_t addr, uint8_t* data, size_t size) {
         addr &= 0xffffffff;
     }
 
-    assert(size != 0);
-    size_t dsize = 0;
-    size_t _size = size;
-    while (_size >>= 1)
-        ++dsize;
-    m_dtrace_ofs << "1," << m_dtype << "," << std::hex << addr << "," << std::dec << dsize << ",";
-    size_t i = size - 1;
-    while ((i > 0) && (data[i] == 0))
-        --i;
-    m_dtrace_ofs << std::hex << static_cast<unsigned>(data[i]);
-    while (i > 0) {
-        --i;
-        m_dtrace_ofs << std::hex << std::setfill('0') << std::setw(2) << static_cast<unsigned>(data[i]);
+    if (in_scope) {
+        assert(size != 0);
+        size_t dsize = 0;
+        size_t _size = size;
+        while (_size >>= 1)
+            ++dsize;
+        m_dtrace_ofs << "1,"
+                     << std::hex << std::setfill('0') << std::setw(16) << m_addr << ","
+                     << std::hex << std::setw(8) << m_insn_binary << ","
+                     << m_dtype << ","
+                     << std::hex << std::setw(16) << addr << ","
+                     << std::dec << dsize << ",";
+        size_t i = size - 1;
+        while ((i > 0) && (data[i] == 0))
+            --i;
+        m_dtrace_ofs << std::hex << static_cast<unsigned>(data[i]);
+        while (i > 0) {
+            --i;
+            m_dtrace_ofs << std::hex << std::setfill('0') << std::setw(2) << static_cast<unsigned>(data[i]);
+        }
+        m_dtrace_ofs << "\n";
+        m_dtrace_ofs.flush();
     }
-    m_dtrace_ofs << "\n";
-    m_dtrace_ofs.flush();
+}
+
+void proc_trace_t::set_entry(reg_t entry) {
+    trace_entry = entry;
+    if (entry == 0) {
+        in_scope = true;
+    }
 }
