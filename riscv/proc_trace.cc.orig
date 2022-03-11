@@ -49,7 +49,7 @@ void proc_trace_t::open_d_trace(const char *data_trace_file_name) {
         throw std::runtime_error("Failed to open data trace file "
                                  + std::string(data_trace_file_name));
     else
-        m_dtrace_ofs << "DRETIRE,ADDR,INST,DTYPE,DADDR,DSIZE,DATA\n";
+        m_dtrace_ofs << "DRETIRE,DTYPE,DADDR,DSIZE,DATA\n";
 }
 
 void proc_trace_t::step(void) {
@@ -101,6 +101,7 @@ void proc_trace_t::set_insn(insn_t insn, uint64_t binary) {
         m_csr_load_data = 0;
         m_csr_size = 0;
 
+<<<<<<< HEAD
         /* Atomic instructions also trigger record_load/record_store so it is necessary
            to determine the type of the instruction to allow differentiation. */
         bool is_amo_add = (((m_insn_binary & MASK_AMOADD_W) == MATCH_AMOADD_W) ||
@@ -130,6 +131,31 @@ void proc_trace_t::set_insn(insn_t insn, uint64_t binary) {
         if (is_amo_and) set_dtype(DTYPE_ATOMIC_AND);
         if (is_amo_min) set_dtype(DTYPE_ATOMIC_MIN);
         if (is_amo_max) set_dtype(DTYPE_ATOMIC_MAX);
+=======
+        bool is_compact = (binary & 0x3) != 0x3;
+        m_is_amo = false;
+        if (is_compact) {
+            // Not interested in load immediate
+            uint64_t inst_15_13 = (binary >> 13) & ((insn_bits_t(1) << 3) - 1);
+            uint64_t inst_1_0 = binary & 0x3;
+            m_is_load = (((inst_1_0 == 0) || (inst_1_0 == 2)) && (inst_15_13 > 0) && (inst_15_13 < 4));
+            m_is_store = ((inst_1_0 == 0) || (inst_1_0 == 2)) & (inst_15_13 > 4);
+        } else {
+            uint64_t inst_6_0 = binary & ((insn_bits_t(1) << 7) - 1);
+            uint64_t inst_4_2 = binary >> 2 & ((insn_bits_t(1) << 3) - 1);
+            uint64_t inst_6_5 = binary >> 5 & ((insn_bits_t(1) << 2) - 1);
+            m_is_load = (inst_4_2 < 2) && (inst_6_5 == 0);
+            m_is_store = (inst_4_2 < 2) && (inst_6_5 == 1);
+            m_is_amo = (inst_6_0 == 0x2f);
+        }
+
+        if (m_is_load)
+            set_dtype(DTYPE_LOAD);
+        if (m_is_store)
+            set_dtype(DTYPE_STORE);
+        if (m_data_trace_debug && in_scope)
+            m_dtrace_ofs << "DEBUG: INSN@" << std::hex << m_addr << ":" << m_insn_binary << "\n";
+>>>>>>> fd2d7620 (add trace_entry)
     }
 }
 
@@ -163,8 +189,23 @@ void proc_trace_t::record_load(reg_t addr, uint64_t res, size_t size, data_src_t
             if (size != 8)
                 res &= ((uint64_t(1) << (size * 8)) - 1);
 
+<<<<<<< HEAD
             set_dtype(DTYPE_LOAD);
             record_data(addr, (uint8_t*)&res, size);
+=======
+        if (!m_is_load) {
+            // It's not clear why these are being triggered.
+            // They seem to come from DATA_SRC_LOAD_TLB_1
+            if (m_data_trace_debug && in_scope)
+                m_dtrace_ofs << "NOT LOAD SRC " << std::dec << src << " " << std::hex << addr <<
+                    std::dec << " ld " << m_is_load << " st " << m_is_store << " amo " << m_is_amo <<
+                    std::hex << m_insn_binary << "\n";
+            else
+                std::cerr << "NOT LOAD SRC " << std::dec << src << " " << std::hex << addr <<
+                    std::dec << " ld " << m_is_load << " st " << m_is_store << " amo " << m_is_amo <<
+                    std::hex << m_insn_binary << "\n";
+            return;
+>>>>>>> fd2d7620 (add trace_entry)
         }
     }
 }
@@ -245,12 +286,16 @@ void proc_trace_t::close(void) {
 }
 
 void proc_trace_t::set_dtype(dtype_t dtype) {
-    // assert(m_dtype == DTYPE_INVALID);
+    assert(m_dtype == DTYPE_INVALID);
     m_dtype = dtype;
 }
 
 void proc_trace_t::record_data(reg_t addr, uint8_t* data, size_t size) {
     assert(m_dtype != DTYPE_INVALID);
+<<<<<<< HEAD
+=======
+    m_recorded_dtype = m_dtype;
+>>>>>>> fd2d7620 (add trace_entry)
 
     if (m_is_32bit_isa) {
         addr &= 0xffffffff;
@@ -268,7 +313,12 @@ void proc_trace_t::record_data(reg_t addr, uint8_t* data, size_t size) {
                      << m_dtype << ","
                      << std::hex << std::setw(16) << addr << ","
                      << std::dec << dsize << ",";
-        for (size_t i = 0; i < size; i++) {
+        size_t i = size - 1;
+        while ((i > 0) && (data[i] == 0))
+            --i;
+        m_dtrace_ofs << std::hex << static_cast<unsigned>(data[i]);
+        while (i > 0) {
+            --i;
             m_dtrace_ofs << std::hex << std::setfill('0') << std::setw(2) << static_cast<unsigned>(data[i]);
         }
         m_dtrace_ofs << "\n";
