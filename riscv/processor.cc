@@ -59,7 +59,7 @@ processor_t::processor_t(const char* isa, const char* priv, const char* varch,
   else if (max_xlen == 64)
     set_mmu_capability(IMPL_MMU_SV48);
 
-  proc_trace = new proc_trace_t();
+  proc_trace = new proc_trace_t(disassembler);
   d_tracer = NULL;
 
   reset();

@@ -8,11 +8,12 @@
 #include <iomanip>
 #include <cassert>
 
-proc_trace_t::proc_trace_t(void)
+proc_trace_t::proc_trace_t(disassembler_t *disassembler)
     : m_addr(0), m_insn_binary(0), m_prv(0), m_ex(0), m_ex_cause(0),
       m_tval(0), m_interrupt(0), m_is_32bit_isa(false), m_is_first_step(true),
       m_insn(insn_t()), m_is_amo(false), m_dtype(DTYPE_INVALID),
-      m_csr_which(CSR_INVALID), m_csr_write(false), m_csr_load_data(0), m_csr_size(0)
+      m_csr_which(CSR_INVALID), m_csr_write(false), m_csr_load_data(0), m_csr_size(0),
+      disassembler(disassembler)
 {
 }
 
@@ -49,7 +50,7 @@ void proc_trace_t::open_d_trace(const char *data_trace_file_name) {
         throw std::runtime_error("Failed to open data trace file "
                                  + std::string(data_trace_file_name));
     else
-        m_dtrace_ofs << "DRETIRE,ADDR,INST,DTYPE,DADDR,DSIZE,DATA\n";
+        m_dtrace_ofs << "DRETIRE,ADDR,INST,DISASM,DTYPE,DADDR,DSIZE,DATA\n";
 }
 
 void proc_trace_t::step(void) {
@@ -265,14 +266,14 @@ void proc_trace_t::record_data(reg_t addr, uint8_t* data, size_t size) {
         m_dtrace_ofs << "1,"
                      << std::hex << std::setfill('0') << std::setw(16) << m_addr << ","
                      << std::hex << std::setw(8) << m_insn_binary << ","
+                     << '"' << std::left << std::setfill(' ') << std::setw(20) << disassembler->disassemble(m_insn) << "\","
                      << m_dtype << ","
-                     << std::hex << std::setw(16) << addr << ","
+                     << std::hex << std::right << std::setw(16) << std::setfill('0') << addr << ","
                      << std::dec << dsize << ",";
         for (size_t i = 0; i < size; i++) {
             m_dtrace_ofs << std::hex << std::setfill('0') << std::setw(2) << static_cast<unsigned>(data[i]);
         }
         m_dtrace_ofs << "\n";
-        m_dtrace_ofs.flush();
     }
 }
 

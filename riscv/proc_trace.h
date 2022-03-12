@@ -38,7 +38,7 @@ typedef enum {
 class proc_trace_t
 {
 public:
-    proc_trace_t(void);
+    proc_trace_t(disassembler_t *disassembler);
 
     void open_i_trace(const char *instruction_trace_file_name);
     void open_d_trace(const char *data_trace_file_name);
@@ -59,7 +59,6 @@ public:
     void record_amo(reg_t addr, uint64_t load_data, uint64_t store_data, size_t size);
     void record_csr_get(int which, insn_t insn, bool write, reg_t load_data, size_t size);
     void record_csr_set(int which, reg_t store_data);
-    void check_data_trace(void);
 
     void close(void);
 
@@ -69,6 +68,7 @@ private:
 
     reg_t trace_entry = 0;
     bool in_scope = false;
+    disassembler_t* disassembler;
 
     reg_t m_addr = 0;
     uint64_t m_insn_binary = 0;
