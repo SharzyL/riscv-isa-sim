@@ -36,8 +36,8 @@ m4_define( proj_version, [?])
 # Setup
 #-------------------------------------------------------------------------
 
-AC_INIT(proj_name,proj_version,proj_maintainer,proj_abbreviation)
-AC_LANG_CPLUSPLUS
+AC_INIT([proj_name],[proj_version],[proj_maintainer],[proj_abbreviation])
+AC_LANG([C++])
 AC_CONFIG_SRCDIR([riscv/common.h])
 AC_CONFIG_AUX_DIR([scripts])
 AC_CANONICAL_BUILD
@@ -79,8 +79,6 @@ MCPPBS_PROG_INSTALL
 # Checks for header files
 #-------------------------------------------------------------------------
 
-AC_HEADER_STDC
-
 #-------------------------------------------------------------------------
 # Checks for type
 #-------------------------------------------------------------------------
@@ -102,7 +100,7 @@ AX_CHECK_COMPILE_FLAG([-relocatable-pch], AC_SUBST([HAVE_CLANG_PCH],[yes]))
 # The '*' suffix indicates an optional subproject. The '**' suffix
 # indicates an optional subproject which is also the name of a group.
 
-MCPPBS_SUBPROJECTS([ fesvr, riscv, disasm, customext, fdt, softfloat, spike_main, spike_dasm ])
+MCPPBS_SUBPROJECTS([ vbridge, fesvr, riscv, disasm, customext, fdt, softfloat, spike_main, spike_dasm ])
 
 #-------------------------------------------------------------------------
 # MCPPBS subproject groups

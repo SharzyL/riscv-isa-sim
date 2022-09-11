@@ -3,6 +3,7 @@
 #include "processor.h"
 #include "mmu.h"
 #include "disasm.h"
+#include "vbridge.h"
 #include <cassert>
 
 #ifdef RISCV_ENABLE_COMMITLOG
@@ -180,6 +181,7 @@ static inline reg_t execute_insn(processor_t* p, reg_t pc, insn_fetch_t fetch)
 
   try {
     npc = fetch.func(p, fetch.insn, pc);
+
     if (npc != PC_SERIALIZE_BEFORE) {
 
 #ifdef RISCV_ENABLE_COMMITLOG

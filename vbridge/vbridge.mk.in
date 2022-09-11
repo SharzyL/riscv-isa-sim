@@ -1,0 +1,8 @@
+vbridge_subproject_deps = \
+
+vbridge_install_prog_srcs = \
+
+vbridge_hdrs = \
+	vbridge.h \
+
+vbridge_srcs = \
