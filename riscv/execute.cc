@@ -181,6 +181,9 @@ static inline reg_t execute_insn(processor_t* p, reg_t pc, insn_fetch_t fetch)
 
   try {
     npc = fetch.func(p, fetch.insn, pc);
+    if (is_vector_instr(fetch.insn.bits())) {
+      setup();
+    }
 
     if (npc != PC_SERIALIZE_BEFORE) {
 

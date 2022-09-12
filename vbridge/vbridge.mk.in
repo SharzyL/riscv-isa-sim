@@ -2,7 +2,25 @@ vbridge_subproject_deps = \
 
 vbridge_install_prog_srcs = \
 
+vbridge_SOURCES = \
+
 vbridge_hdrs = \
 	vbridge.h \
 
 vbridge_srcs = \
+
+vbridge_extra_objs = \
+	obj_dir/vbridge.o \
+	obj_dir/VV__ALL.o \
+	obj_dir/verilated.o \
+
+verilate_cc = \
+	vbridge.cc \
+
+verilate_hdl = V.v
+
+$(vbridge_extra_objs): % : obj_dir/VV.mk
+	cd obj_dir && $(MAKE) -f VV.mk verilated.o vbridge.o VV__ALL.o
+
+obj_dir/VV.mk: $(verilate_cc) $(verilate_hdl)
+	verilator --make gmake --cc --exe $^
