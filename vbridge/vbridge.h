@@ -15,17 +15,29 @@ inline bool is_vector_instr(uint64_t f) {
   }
 }
 
-struct v_req {
+struct v_resp {
   uint32_t rd_data;
+  bool valid;
 };
 
-struct v_resp {
+struct v_req {
   uint32_t insn_bits;
   uint32_t rs1_data;
   uint32_t rs2_data;
   bool sb_clear;
+  bool valid;
 };
 
-void setup();
+struct VBridgeImpl;
+
+struct VBridge {
+  VBridgeImpl *impl;
+  VBridge();
+  ~VBridge();
+  void setup(int argc, char **argv);
+  v_resp step(const v_req &req);
+};
+
+extern VBridge vbridge;
 
 #endif

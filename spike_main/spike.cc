@@ -15,6 +15,7 @@
 #include <memory>
 #include <fstream>
 #include "../VERSION"
+#include "vbridge.h"
 
 static void help(int exit_code = 1)
 {
@@ -410,6 +411,8 @@ int main(int argc, char** argv)
 
   if (!*argv1)
     help();
+
+  vbridge.setup(argc, argv);
 
   std::vector<std::pair<reg_t, mem_t*>> mems = make_mems(cfg.mem_layout());
 

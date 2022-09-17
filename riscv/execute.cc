@@ -181,8 +181,19 @@ static inline reg_t execute_insn(processor_t* p, reg_t pc, insn_fetch_t fetch)
 
   try {
     npc = fetch.func(p, fetch.insn, pc);
+
     if (is_vector_instr(fetch.insn.bits())) {
-      setup();
+      const auto &xr = p->get_state()->XPR;
+      auto &insn = fetch.insn;
+      v_req req = {
+          .insn_bits = (uint32_t) insn.bits(),
+          .rs1_data = (uint32_t) xr[insn.rs1()],
+          .rs2_data = (uint32_t) xr[insn.rs2()],
+          .valid = false,
+      };
+      vbridge.step(req);
+      // TODO: handle tilelink req (after interface added)
+      // TODO: compare output (mem write, reg write)
     }
 
     if (npc != PC_SERIALIZE_BEFORE) {

@@ -3,8 +3,8 @@ spike_main_subproject_deps = \
 	fesvr \
 	softfloat \
 	disasm \
-	vbridge \
 	riscv \
+	vbridge \
 
 spike_main_install_prog_srcs = \
 	spike.cc \
