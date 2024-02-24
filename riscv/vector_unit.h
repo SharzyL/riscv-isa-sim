@@ -102,6 +102,9 @@ public:
   bool vill;
   bool vstart_alu;
 
+  reg_t lane_num = 8;
+  reg_t lane_granularity = 32;
+
   // vector element for various SEW
   template<class T> T& elt(reg_t vReg, reg_t n, bool is_write = false);
   // vector element group access, where EG is a std::array<T, N>.
@@ -149,4 +152,5 @@ public:
     return (VRM)(vxrm->read());
   }
 };
+
 #endif

@@ -1656,6 +1656,63 @@ reg_t index[P.VU.vlmax]; \
       break; \
   }; \
 
+#define VI_VFP_VV_LOOP_REDUCTION_LANE_ORDERED_BASE(width, BODY) \
+  float##width##_t vd_0 = P.VU.elt<float##width##_t>(rd_num, 0); \
+  float##width##_t vs1_0 = P.VU.elt<float##width##_t>(rs1_num, 0); \
+  vd_0 = vs1_0; \
+  bool is_active = false; \
+  reg_t vstart = P.VU.vstart->read(); \
+  reg_t step_size = P.VU.lane_num * P.VU.lane_granularity / width; \
+  for (reg_t l = 0; l < P.VU.lane_num; l++) { \
+    if (l >= vl) continue; \
+    reg_t i = l; \
+    float##width##_t vd_0_backup = vd_0; \
+    bool vd_0_initialized = false; \
+    bool mask = insn.v_vm() == 1 || (P.VU.elt<uint64_t>(0, (i / 64)) >> (i % 64)) & 0x1; \
+    if (mask) { \
+      vd_0 = P.VU.elt<float##width##_t>(rs2_num, i); \
+      vd_0_initialized = true; \
+    } \
+    for (i = l + step_size; i < vl; i += step_size) { \
+      bool mask = insn.v_vm() == 1 || (P.VU.elt<uint64_t>(0, (i / 64)) >> (i % 64)) & 0x1; \
+      if (mask) { \
+        if (vd_0_initialized) { \
+          float##width##_t vs2 = P.VU.elt<float##width##_t>(rs2_num, i); \
+          is_active = true; BODY; set_fp_exceptions; \
+        } else { \
+          vd_0 = P.VU.elt<float##width##_t>(rs2_num, i); \
+          vd_0_initialized = true; \
+        } \
+      } \
+    } \
+    float##width##_t vs2 = vd_0; \
+    vd_0 = vd_0_backup; \
+    if (vd_0_initialized) { \
+      is_active = true; BODY; set_fp_exceptions; \
+    } \
+  /* back brace included */ VI_VFP_LOOP_REDUCTION_END(e32);
+
+#define VI_VFP_VV_LOOP_LANE_ORDERED_REDUCTION(BODY16, BODY32, BODY64) \
+  VI_CHECK_REDUCTION(false) \
+  VI_VFP_COMMON \
+  switch (P.VU.vsew) { \
+    case e16: { \
+      VI_VFP_VV_LOOP_REDUCTION_LANE_ORDERED_BASE(16, BODY16) \
+      break; \
+    } \
+    case e32: { \
+      VI_VFP_VV_LOOP_REDUCTION_LANE_ORDERED_BASE(32, BODY32) \
+      break; \
+    } \
+    case e64: { \
+      VI_VFP_VV_LOOP_REDUCTION_LANE_ORDERED_BASE(64, BODY64) \
+      break; \
+    } \
+    default: \
+      require(0); \
+      break; \
+  }; \
+
 #define VI_VFP_VV_LOOP_WIDE_REDUCTION(BODY16, BODY32) \
   VI_CHECK_REDUCTION(true) \
   VI_VFP_COMMON \
